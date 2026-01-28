@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: telegram-approval-mcp
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: TRANSPORT_MODE
+        value: http
+      - key: PORT
+        value: "3000"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: NODE_ENV
+        value: production
