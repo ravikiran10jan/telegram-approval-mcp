@@ -258,6 +258,21 @@ const tools: Tool[] = [
       required: ["message"],
     },
   },
+  {
+    name: "notify_completion",
+    description: "Send a task completion notification. MUST be called when any task ends (SUCCESS, FAILED, or ABORTED). This is mandatory and cannot be skipped.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task_id: { type: "string", description: "Unique identifier for the task" },
+        status: { type: "string", enum: ["SUCCESS", "FAILED", "ABORTED"], description: "Final status of the task" },
+        summary: { type: "string", description: "Brief summary of what was done" },
+        artifacts: { type: "array", items: { type: "string" }, description: "List of files changed, PRs created, etc." },
+        next_steps: { type: "string", description: "Suggested next steps (if any)" },
+      },
+      required: ["task_id", "status", "summary"],
+    },
+  },
 ];
 
 // Tool handler
@@ -371,6 +386,36 @@ async function handleToolCall(name: string, args: Record<string, unknown>): Prom
       try {
         await bot.sendMessage(chatId, message, { parse_mode: "Markdown" });
         return { content: [{ type: "text", text: JSON.stringify({ status: "success" }) }] };
+      } catch (err: any) {
+        return { content: [{ type: "text", text: JSON.stringify({ status: "error", message: err.message }) }] };
+      }
+    }
+
+    case "notify_completion": {
+      const { task_id, status, summary, artifacts, next_steps } = args as {
+        task_id: string;
+        status: "SUCCESS" | "FAILED" | "ABORTED";
+        summary: string;
+        artifacts?: string[];
+        next_steps?: string;
+      };
+      
+      const statusEmoji = status === "SUCCESS" ? "✅" : status === "FAILED" ? "❌" : "⚠️";
+      let messageText = `${statusEmoji} **Task Complete**\n\n`;
+      messageText += `**ID:** \`${task_id}\`\n`;
+      messageText += `**Status:** ${status}\n\n`;
+      messageText += `**Summary:**\n${summary}\n`;
+      
+      if (artifacts?.length) {
+        messageText += `\n**Artifacts:**\n${artifacts.map(a => `• ${a}`).join("\n")}\n`;
+      }
+      if (next_steps) {
+        messageText += `\n**Next Steps:**\n${next_steps}`;
+      }
+      
+      try {
+        await bot.sendMessage(chatId, messageText, { parse_mode: "Markdown" });
+        return { content: [{ type: "text", text: JSON.stringify({ status: "success", task_id, completion_status: status }) }] };
       } catch (err: any) {
         return { content: [{ type: "text", text: JSON.stringify({ status: "error", message: err.message }) }] };
       }
