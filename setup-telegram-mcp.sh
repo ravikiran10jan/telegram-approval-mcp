@@ -43,12 +43,33 @@ Files: [files changed, if any]")
 - During implementation
 - When asking clarifying questions
 
+## Approval Workflow
+
+When an action needs user approval (destructive operations, deployments, etc.):
+
+1. **Request approval with details:**
+```
+mcp__telegram-approval__request_approval({
+  title: "Action requiring approval",
+  description: "What will happen and why approval is needed",
+  context: "Relevant code or details (optional)"
+})
+```
+
+2. **Wait for response** - tool returns when user taps Approve/Deny
+
+3. **On APPROVED:** Continue with the action immediately
+
+4. **On DENIED:** Stop and ask for alternative approach
+
 ## Polling for Messages
 
 At response start, check for pending messages:
 ```
 mcp__telegram-approval__get_pending_messages()
 ```
+
+Act on any pending quests or messages proactively.
 EOF
 
 echo "Created: $AGENTS_MD"
@@ -57,7 +78,6 @@ echo "Created: $AGENTS_MD"
 QODER_MCP_CONFIG="$HOME/Library/Application Support/Qoder/SharedClientCache/mcp.json"
 
 if [ -f "$QODER_MCP_CONFIG" ]; then
-    # Check if telegram-approval already exists
     if grep -q "telegram-approval" "$QODER_MCP_CONFIG"; then
         echo "MCP config already has telegram-approval"
     else
@@ -76,9 +96,9 @@ echo ""
 echo "Setup complete!"
 echo ""
 echo "Available tools:"
-echo "  - mcp__telegram-approval__send_message"
-echo "  - mcp__telegram-approval__request_approval"
-echo "  - mcp__telegram-approval__get_pending_messages"
-echo "  - mcp__telegram-approval__notify_completion"
+echo "  - mcp__telegram-approval__send_message - Send messages"
+echo "  - mcp__telegram-approval__request_approval - Get approval with Approve/Deny buttons"
+echo "  - mcp__telegram-approval__get_pending_messages - Check for Telegram messages"
+echo "  - mcp__telegram-approval__notify_completion - Structured task completion"
 echo ""
 echo "Restart Qoder to apply changes."
